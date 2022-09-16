@@ -79,7 +79,7 @@ class FramePair:
             matched_index = plan[i].argmax()
             soft_matching[i, matched_index] = 1
 
-        mask0, mask1 = self.frame0.mask, self.frame1.mask
+        mask0, mask1 = self.frame0, self.frame1
 
         stitched_mask1 = np.zeros(mask1.shape)
         for lbl1_index in range(1, m):
