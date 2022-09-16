@@ -1,5 +1,5 @@
 import numpy as np
-from cellmatch.alignment import *
+from cellstitch.alignment import *
 from cellpose.metrics import _label_overlap
 from cellstitch.utils import *
 
