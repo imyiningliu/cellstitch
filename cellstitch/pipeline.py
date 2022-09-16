@@ -54,7 +54,7 @@ def stitch3D(masks, verbose=False):
     prev_index = 0
     max_lbl = 0
 
-    while is_empty((masks[prev_index]):
+    while is_empty(masks[prev_index]):
         prev_index += 1
 
     curr_index = prev_index + 1
