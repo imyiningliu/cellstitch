@@ -1,5 +1,4 @@
 import ot
-from cellmatch.frame import *
 from cellpose.metrics import _label_overlap
 from cellstitch.utils import *
 
