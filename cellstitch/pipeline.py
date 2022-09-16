@@ -3,6 +3,7 @@ from cellstitch.alignment import *
 from cellpose.metrics import _label_overlap
 from cellstitch.utils import *
 
+
 def relabel_layer(masks, z, lbls):
     """
     Relabel the label in LBLS in layer Z of MASKS.

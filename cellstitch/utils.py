@@ -13,7 +13,7 @@ def is_empty(mask):
     """
     Return if the frame is empty.
     """
-    return len(mask.get_lbls()) == 1
+    return len(get_lbls(mask)) == 1
 
 
 def get_filenames(data_path):
