@@ -1,6 +1,6 @@
 import ot
 from skimage import color
-from cellmatch.frame import *
+from cellstitch.frame import *
 import matplotlib.pyplot as plt
 from cellpose.metrics import _label_overlap
 
