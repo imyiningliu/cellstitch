@@ -1,28 +1,49 @@
 import ot
+from skimage import color
+from cellmatch.frame import *
+import matplotlib.pyplot as plt
 from cellpose.metrics import _label_overlap
-from cellstitch.utils import *
 
 
 class FramePair:
     def __init__(self, mask0, mask1, max_lbl=0):
-        self.frame0 = mask0
-        self.frame1 = mask1
+        self.frame0 = Frame(mask0)
+        self.frame1 = Frame(mask1)
 
         # store the max labels for stitching
         max_lbl_default = max(
-            get_lbls(mask0).max(),
-            get_lbls(mask1).max()
+            self.frame0.get_lbls().max(),
+            self.frame1.get_lbls().max()
         )
 
         self.max_lbl = max(max_lbl, max_lbl_default)
+
+    def display(self):
+        """
+        Display frame0 and frame1 next to each other, with consistent colorings.
+        """
+
+        num_lbls = len(np.union1d(self.frame0.get_lbls(), self.frame1.get_lbls()))
+
+        colors = np.random.random((num_lbls, 3))
+
+        frames = np.array([self.frame0.mask, self.frame1.mask])
+        rgb = color.label2rgb(frames, colors=colors, bg_label=0)
+
+        fig, axes = plt.subplots(1, 2, figsize=(20, 10))
+        axes[0].imshow(rgb[0])
+        axes[1].imshow(rgb[1])
+
+        plt.tight_layout()
+        plt.show()
 
     def get_plan(self, C):
         """
         Compute the transport plan between the two frames, given the cost matrix between the cells.
         """
         # get cell sizes
-        sizes0 = get_sizes(self.frame0)
-        sizes1 = get_sizes(self.frame1)
+        sizes0 = self.frame0.get_sizes()
+        sizes1 = self.frame1.get_sizes()
 
         # convert to distribution to compute transport plan
         dist0 = sizes0 / sum(sizes0)
@@ -37,8 +58,8 @@ class FramePair:
         """
         Return the cost matrix between cells in the two frame defined by IoU.
         """
-        lbls0 = get_lbls(self.frame0)
-        lbls1 = get_lbls(self.frame1)
+        lbls0 = self.frame0.get_lbls()
+        lbls1 = self.frame1.get_lbls()
 
         num_cells0 = len(lbls0)
         num_cells1 = len(lbls1)
@@ -58,14 +79,14 @@ class FramePair:
 
         return C
 
-    def get_stitched_mask(self):
+    def stitch(self):
         """Stitch frame1 using frame 0."""
 
-        lbls0 = get_lbls(self.frame0)
-        lbls1 = get_lbls(self.frame1)
+        lbls0 = self.frame0.get_lbls()
+        lbls1 = self.frame1.get_lbls()
 
         # get sizes
-        overlap = _label_overlap(self.frame0, self.frame1)
+        overlap = _label_overlap(self.frame0.mask, self.frame1.mask)
 
         # compute matching
         C = self.get_cost_matrix(overlap)
@@ -79,7 +100,7 @@ class FramePair:
             matched_index = plan[i].argmax()
             soft_matching[i, matched_index] = 1
 
-        mask0, mask1 = self.frame0, self.frame1
+        mask0, mask1 = self.frame0.mask, self.frame1.mask
 
         stitched_mask1 = np.zeros(mask1.shape)
         for lbl1_index in range(1, m):
@@ -97,4 +118,4 @@ class FramePair:
             else:
                 self.max_lbl += 1
                 stitched_mask1[mask1 == lbl1] = self.max_lbl
-        return stitched_mask1
+        self.frame1 = Frame(stitched_mask1)

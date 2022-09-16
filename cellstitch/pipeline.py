@@ -1,7 +1,5 @@
-import numpy as np
-from cellstitch.alignment import *
+from cellmatch.alignment import *
 from cellpose.metrics import _label_overlap
-from cellstitch.utils import *
 
 
 def relabel_layer(masks, z, lbls):
@@ -44,24 +42,22 @@ def overseg_correction(masks):
         relabel_layer(masks, z, lbls)
 
 
-def stitch3D(masks, verbose=False):
+def full_stitch(masks, verbose=False):
     """
-    Stitch masks.
+    Stitch masks in-place.
     """
-    stitched_mask = np.zeros(masks.shape)
-
     num_frame = masks.shape[0]
 
     prev_index = 0
     max_lbl = 0
 
-    while is_empty(masks[prev_index]):
+    while Frame(masks[prev_index]).is_empty():
         prev_index += 1
 
     curr_index = prev_index + 1
 
     while curr_index < num_frame:
-        if is_empty(masks[curr_index]):
+        if Frame(masks[curr_index]).is_empty():
             # if frame is empty, skip
             curr_index += 1
         else:
@@ -69,12 +65,12 @@ def stitch3D(masks, verbose=False):
                 print("===Stitching frame %s with frame %s ...===" % (curr_index, prev_index))
 
             fp = FramePair(masks[prev_index], masks[curr_index], max_lbl=max_lbl)
-            stitched_mask[curr_index] = fp.get_stitched_mask()
+            fp.stitch()
+            masks[curr_index] = fp.frame1.mask
 
             max_lbl = fp.max_lbl
 
             prev_index = curr_index
             curr_index += 1
 
-    overseg_correction(stitched_mask)
-    return stitched_mask
+    overseg_correction(masks)
