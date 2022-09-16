@@ -2,6 +2,14 @@ import os
 import numpy as np
 
 
+def get_sizes(mask):
+    """
+    Calculate sizes of each mask from frame.
+    """
+    sizes = [(mask == lbl).sum() for lbl in get_lbls(mask)]
+    return np.array(sizes)
+
+
 def get_lbls(mask):
     """
     Returns the number of labels in the mask, including the background label.

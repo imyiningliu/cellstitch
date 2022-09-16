@@ -21,8 +21,8 @@ class FramePair:
         Compute the transport plan between the two frames, given the cost matrix between the cells.
         """
         # get cell sizes
-        sizes0 = self.frame0.get_sizes()
-        sizes1 = self.frame1.get_sizes()
+        sizes0 = get_sizes(self.frame0)
+        sizes1 = get_sizes(self.frame1)
 
         # convert to distribution to compute transport plan
         dist0 = sizes0 / sum(sizes0)
@@ -37,8 +37,8 @@ class FramePair:
         """
         Return the cost matrix between cells in the two frame defined by IoU.
         """
-        lbls0 = self.frame0.get_lbls()
-        lbls1 = self.frame1.get_lbls()
+        lbls0 = get_lbls(self.frame0)
+        lbls1 = get_lbls(self.frame1)
 
         num_cells0 = len(lbls0)
         num_cells1 = len(lbls1)
@@ -61,11 +61,11 @@ class FramePair:
     def get_stitched_mask(self):
         """Stitch frame1 using frame 0."""
 
-        lbls0 = self.frame0.get_lbls()
-        lbls1 = self.frame1.get_lbls()
+        lbls0 = get_lbls(self.frame0)
+        lbls1 = get_lbls(self.frame1)
 
         # get sizes
-        overlap = _label_overlap(self.frame0.mask, self.frame1.mask)
+        overlap = _label_overlap(self.frame0, self.frame1)
 
         # compute matching
         C = self.get_cost_matrix(overlap)
