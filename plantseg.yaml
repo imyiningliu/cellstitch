@@ -1,5 +1,5 @@
 # Contains the path to the directory or file to process
-path: "../data/ovules/plantseg_test/"
+path: "../data/ovules_subsampled/plantseg_test/"
 
 preprocessing:
   # enable/disable preprocessing
