@@ -22,8 +22,8 @@ def average_precision(masks_true, masks_pred, threshold):
             if iou[lbl_true][lbl_pred] >= threshold:
                 tp += 2  # count the number of matched cells
 
-    fp = len(lbls_pred) - tp
-    fn = len(lbls_true) - tp
+    fp = len(lbls_pred) - tp / 2
+    fn = len(lbls_true) - tp / 2
 
     ap = tp / (tp + fp + fn)
 
