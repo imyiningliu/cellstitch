@@ -1,7 +1,9 @@
 from cellpose import metrics as cp_metrics
+from cellpose import utils as cp_utils
 from cellstitch.alignment import *
-from tvtk.api import tvtk
-from tvtk.common import configure_input
+from scipy import ndimage as ndi
+from scipy.spatial import ConvexHull, Delaunay
+from skimage.measure import marching_cubes, mesh_surface_area
 
 
 #--------------------
@@ -24,28 +26,25 @@ def sample_indices(masks, n=100):
     for mask in masks:
         n = min(get_num_cells(mask), n)
         assert n > 0, "Empty masks"
-        indices.append(return np.random.choice(np.unique(mask)[1:], n))
+        indices.append(np.random.choice(np.unique(mask)[1:], n))
     return indices
     
 
-def _match_lbls(source_mask, target_mask, sc_lbl):
+def match_lbls(source_mask, target_mask, sc_lbl):
     """
     Find matched label between source mask & target mask with largest IoU area,
     Return target label
     """
     coords = np.nonzero(source_mask == sc_lbl)
     cand_lbls, counts = np.unique(target_mask[coords], return_counts=True)  # Candidate labels
-    
-    if cand_lbls[0] == 0:
-        cand_lbls = cand_lbls[1:]
-        counts = counts[1:]
-        
+
     if len(cand_lbls) == 0:
-        tg_lbl == -1
+        tg_lbl = -1
     else:
         # First check whether argmax matched lbl has IoU exceeding threshold
         if cand_lbls[0] == 0: # Ignore label 0
             cand_lbls = cand_lbls[1:]
+            counts = counts[1:]
         
         max_intersect = counts.max()
         tg_lbl = cand_lbls[counts.argmax()]
@@ -117,10 +116,10 @@ def average_precision(masks_true, masks_pred, threshold):
     return [ap, tp, fp, fn]  # return as list for easy convert to dataframe
 
 
-def avg_symmetric_surf_dist(mask, pred, mask_lbls):
+def avg_symmetric_surf_dist(mask, pred, mask_lbls, pred_lbls):
     """
     Calculate Average Symmetric Surface Distance for each paired mask label & prediction
-     (Randomly sample 100 instances)
+     (Randomly sample 100 instances: presampled as `mask_lbls` & `pred_lbls`)
     """
     
     # Helper functions
@@ -140,11 +139,6 @@ def avg_symmetric_surf_dist(mask, pred, mask_lbls):
         assd = np.concatenate([dist1, dist2]).mean()
 
         return assd
-
-    pred_lbls = np.array([
-        _match_lbls(mask, pred, lbl)
-        for lbl in pred_lbls
-    ])
     
     assd = []
     for sc_lbl, tg_lbl in zip(mask_lbls, pred_lbls):
@@ -153,23 +147,20 @@ def avg_symmetric_surf_dist(mask, pred, mask_lbls):
     return np.mean(assd) if len(assd) > 0 else 0
 
     
-def compactness_convexity_ae(mask, pred, eps=1e-10):
+def compactness_convexity_ae(mask, pred, mask_lbls, pred_lbls, eps=1e-10):
     """
     Calculate Absolute Error of the following metrics between mapped (ground-truth, predicted) masks:
      - (1). Compactness
      - (2). Convexity
-     (Randomly sample 100 instances)
-    """
-    mask_lbls = np.unique(mask)[1:]
-    pred_lbls = np.array([
-        _match_lbls(mask, pred, lbl)
-        for lbl in mask_lbls
-    ])
-    
+     (Randomly sample 100 instances: presampled as `mask_lbls` & `pred_lbls`)
+    """    
     comp_abs_errors = np.zeros(len(mask_lbls)) # compactness errors
     conv_abs_errors = np.zeros(len(mask_lbls)) # convexity errors
     
     for i, (mask_lbl, pred_lbl) in enumerate(zip(mask_lbls, pred_lbls)):
+        if pred_lbl == -1:
+            continue
+            
         mask_bin = (mask == mask_lbl).astype(np.uint8)
         pred_bin = (pred == pred_lbl).astype(np.uint8)
         
@@ -190,4 +181,4 @@ def compactness_convexity_ae(mask, pred, eps=1e-10):
         cp = ap_ch / (ap+eps)
         conv_abs_errors[i] = np.abs(cp-cm) / cm
         
-    return {'Compactness': comp_abs_errors, 'Convexity': conv_abs_errors}
+    return {'Compactness': comp_abs_errors.mean(), 'Convexity': conv_abs_errors.mean()}
