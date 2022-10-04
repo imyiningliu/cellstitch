@@ -3,6 +3,7 @@ from cellpose import utils as cp_utils
 from cellstitch.alignment import *
 from scipy import ndimage as ndi
 from scipy.spatial import ConvexHull, Delaunay
+from scipy.spatial.qhull import QhullError
 from skimage.measure import marching_cubes, mesh_surface_area
 
 
@@ -20,7 +21,7 @@ def get_avg_vol(masks):
     return total_vol / n
 
 
-def sample_indices(masks, n=100):
+def sample_indices(masks, n=50):
     """Randomly sample instances from the list of input 3D masks"""
     indices = []
     for mask in masks:
@@ -164,21 +165,25 @@ def compactness_convexity_ae(mask, pred, mask_lbls, pred_lbls, eps=1e-10):
         mask_bin = (mask == mask_lbl).astype(np.uint8)
         pred_bin = (pred == pred_lbl).astype(np.uint8)
         
-        # Compactness 
-        vm, am = mask_bin.sum(), _calc_surface_area(mask_bin)
-        vp, ap = pred_bin.sum(), _calc_surface_area(pred_bin)
-        cm = 36*np.pi * vm**2 / (am**3+eps)
-        cp = 36*np.pi * vp**2 / (ap**3+eps)
-        comp_abs_errors[i] = np.abs(cp-cm) / cm
+        try:
+            # Compactness 
+            vm, am = mask_bin.sum(), _calc_surface_area(mask_bin)
+            vp, ap = pred_bin.sum(), _calc_surface_area(pred_bin)
+            cm = 36*np.pi * vm**2 / (am**3+eps)
+            cp = 36*np.pi * vp**2 / (ap**3+eps)
+            comp_abs_errors[i] = np.abs(cp-cm) / cm
         
-        # Convexity
-        mask_bin_ch = _compute_convex_hull(mask_bin)
-        pred_bin_ch = _compute_convex_hull(pred_bin)
+            # Convexity
+            mask_bin_ch = _compute_convex_hull(mask_bin)
+            pred_bin_ch = _compute_convex_hull(pred_bin)
         
-        am_ch = _calc_surface_area(mask_bin_ch)
-        ap_ch = _calc_surface_area(pred_bin_ch)
-        cm = am_ch / (am+eps)
-        cp = ap_ch / (ap+eps)
-        conv_abs_errors[i] = np.abs(cp-cm) / cm
+            am_ch = _calc_surface_area(mask_bin_ch)
+            ap_ch = _calc_surface_area(pred_bin_ch)
+            cm = am_ch / (am+eps)
+            cp = ap_ch / (ap+eps)
+            conv_abs_errors[i] = np.abs(cp-cm) / cm
+        except QhullError as qe:
+            print("2D mask is detected, can't compute 3D convex hull, passed")
+            pass
         
     return {'Compactness': comp_abs_errors.mean(), 'Convexity': conv_abs_errors.mean()}
