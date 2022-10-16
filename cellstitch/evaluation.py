@@ -1,3 +1,6 @@
+import gc
+import numpy as np
+
 from cellpose import metrics as cp_metrics
 from cellpose import utils as cp_utils
 from cellstitch.alignment import *
@@ -28,28 +31,25 @@ def sample_indices(masks, n=50):
         n = min(get_num_cells(mask), n)
         assert n > 0, "Empty masks"
         indices.append(np.random.choice(np.unique(mask)[1:], n))
-    return indices
+    return np.array(indices)
     
 
 def match_lbls(source_mask, target_mask, sc_lbl):
     """
-    Find matched label between source mask & target mask with largest IoU area,
-    Return target label
+    Find matched label between source mask & target mask with largest IoU area
+    Return the best-matched target label
     """
     coords = np.nonzero(source_mask == sc_lbl)
     cand_lbls, counts = np.unique(target_mask[coords], return_counts=True)  # Candidate labels
 
-    if len(cand_lbls) == 0:
+    if len(cand_lbls) == 0 or (len(cand_lbls) == 1 and cand_lbls[0] == 0):
         tg_lbl = -1
     else:
         # First check whether argmax matched lbl has IoU exceeding threshold
         if cand_lbls[0] == 0: # Ignore label 0
             cand_lbls = cand_lbls[1:]
             counts = counts[1:]
-        
-        max_intersect = counts.max()
         tg_lbl = cand_lbls[counts.argmax()]
-        
     return tg_lbl
 
 
@@ -93,6 +93,26 @@ def _compute_convex_hull(image):
 def _calc_surface_area(mask):
     verts, faces, _, _ = marching_cubes(mask)
     return mesh_surface_area(verts, faces)
+
+
+def _subsample_mask(sc_mask, tg_mask):
+    """
+    Subsample the minimum cuboid surrounding the nonzero elements of the source & target binary masks
+    """
+    d, h, w = sc_mask.shape
+
+    # Convert to integer if input is binary
+    union = np.logical_or(sc_mask, tg_mask).astype(np.uint8)
+    coords = np.argwhere(union).astype(np.uint16)
+
+    dl, hl, wl = coords.min(0)
+    dr, hr, wr = coords.max(0)
+
+    # Maintain 5-pixel wide background outside mask volume
+    bw = 5
+    dl, hl, wl = max(0, dl-bw), max(0, hl-bw), max(0, wl-bw)
+    dr, hr, wr = min(d, dr+bw+1), min(h, hr+bw+1), min(w, wr+bw+1)
+    return sc_mask[dl:dr, hl:hr, wl:wr], tg_mask[dl:dr, hl:hr, wl:wr]
 
 
 #--------------------
@@ -139,12 +159,17 @@ def avg_symmetric_surf_dist(mask, pred, mask_lbls, pred_lbls):
         dist2 = ndi.distance_transform_edt(m2)[np.nonzero(pred_outline)]
         assd = np.concatenate([dist1, dist2]).mean()
 
+        del m1, m2, mask_outline, pred_outline
+        gc.collect()
+
         return assd
     
     assd = []
     for sc_lbl, tg_lbl in zip(mask_lbls, pred_lbls):
         if tg_lbl != -1:
-            assd.append(_calc_assd(mask == sc_lbl, pred == tg_lbl))
+            mask_bin, pred_bin = _subsample_mask(mask == sc_lbl, pred == tg_lbl)
+            assd.append(_calc_assd(mask_bin, pred_bin))
+
     return np.mean(assd) if len(assd) > 0 else 0
 
     
@@ -162,9 +187,8 @@ def compactness_convexity_ae(mask, pred, mask_lbls, pred_lbls, eps=1e-10):
         if pred_lbl == -1:
             continue
             
-        mask_bin = (mask == mask_lbl).astype(np.uint8)
-        pred_bin = (pred == pred_lbl).astype(np.uint8)
-        
+        mask_bin, pred_bin = _subsample_mask(mask == mask_lbl, pred == pred_lbl)
+
         try:
             # Compactness 
             vm, am = mask_bin.sum(), _calc_surface_area(mask_bin)
@@ -182,8 +206,15 @@ def compactness_convexity_ae(mask, pred, mask_lbls, pred_lbls, eps=1e-10):
             cm = am_ch / (am+eps)
             cp = ap_ch / (ap+eps)
             conv_abs_errors[i] = np.abs(cp-cm) / cm
-        except QhullError as qe:
-            print("2D mask is detected, can't compute 3D convex hull, passed")
+
+            del mask_bin_ch, pred_bin_ch
+            gc.collect()
+
+        except (RuntimeError, QhullError) as errs:
+            print("Can't compute 3D convex hull / surface area given the mask, passed")
             pass
+
+        del mask_bin, pred_bin
+        gc.collect()
         
     return {'Compactness': comp_abs_errors.mean(), 'Convexity': conv_abs_errors.mean()}
