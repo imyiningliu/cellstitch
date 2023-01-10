@@ -50,7 +50,10 @@ class FramePair:
         dist1 = sizes1 / sum(sizes1)
 
         # compute transportation plan
-        plan = ot.emd(dist0, dist1, C)
+        lambd = 1e-1
+        plan = ot.smooth.smooth_ot_dual(dist0, dist1, C, lambd, reg_type='l2')
+        
+        # plan = ot.emd(dist0, dist1, C)
 
         return plan
 
