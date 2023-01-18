@@ -131,7 +131,16 @@ class FramePair:
 
         # compute matching
         C = ot.dist(locs0, locs1)
-        plan = self.get_plan(C)
+        # get cell sizes
+        sizes0 = self.frame0.get_sizes()[1:]
+        sizes1 = self.frame1.get_sizes()[1:]
+
+        # convert to distribution to compute transport plan
+        dist0 = sizes0 / sum(sizes0)
+        dist1 = sizes1 / sum(sizes1)
+
+        # compute transportation plan
+        plan = ot.emd(dist0, dist1, C)
 
         # get a soft matching from plan
         n, m = plan.shape
