@@ -44,7 +44,7 @@ def overseg_correction(masks):
 
 def full_stitch(masks, verbose=False):
     """
-    Stitch masks in-place.
+    Stitch masks in-place (top -> bottom).
     """
     num_frame = masks.shape[0]
 
@@ -72,5 +72,39 @@ def full_stitch(masks, verbose=False):
 
             prev_index = curr_index
             curr_index += 1
+
+    overseg_correction(masks)
+
+
+def full_stitch_reverse(masks, verbose=False):
+    """
+    Stitch masks in-place (bottom -> top).
+    """
+    num_frame = masks.shape[0]
+
+    prev_index = num_frame
+    max_lbl = 0
+
+    while Frame(masks[prev_index]).is_empty():
+        prev_index -= 1
+
+    curr_index = prev_index - 1
+
+    while curr_index > 0:
+        if Frame(masks[curr_index]).is_empty():
+            # if frame is empty, skip
+            curr_index -= 1
+        else:
+            if verbose:
+                print("===Stitching frame %s with frame %s ...===" % (curr_index, prev_index))
+
+            fp = FramePair(masks[prev_index], masks[curr_index], max_lbl=max_lbl)
+            fp.stitch()
+            masks[curr_index] = fp.frame1.mask
+
+            max_lbl = fp.max_lbl
+
+            prev_index = curr_index
+            curr_index -= 1
 
     overseg_correction(masks)
