@@ -42,38 +42,73 @@ def overseg_correction(masks):
         relabel_layer(masks, z, lbls)
 
 
-def full_stitch(masks, verbose=False, orientation='forward'):
-    """
-    Stitch masks in-place.
-    """
-    num_frame = masks.shape[0]
-
-    #if orientation == 'forward':
+def _forward_stitch(masks, max_lbl, verbose=False):
+    n_frames = masks.shape[0]
     prev_index = 0
-    max_lbl = 0
-
     while Frame(masks[prev_index]).is_empty():
         prev_index += 1
-
     curr_index = prev_index + 1
 
-    while curr_index < num_frame:
+    while curr_index < n_frames:
         if Frame(masks[curr_index]).is_empty():
-            # if frame is empty, skip
+            # skip empty frame
             curr_index += 1
         else:
             if verbose:
-                print("===Stitching frame %s with frame %s ...===" % (curr_index, prev_index))
-
+                print('===stitching frame %s with frame %s ...===' % (curr_index, prev_index))
             fp = FramePair(masks[prev_index], masks[curr_index], max_lbl=max_lbl)
             fp.stitch()
             masks[curr_index] = fp.frame1.mask
-
             max_lbl = fp.max_lbl
 
             prev_index = curr_index
             curr_index += 1
 
+    return max_lbl
+
+
+def _backward_stitch(masks, max_lbl, verbose=False):
+    n_frames = masks.shape[0]
+    prev_index = n_frames - 1
+
+    while Frame(masks[prev_index]).is_empty():
+        prev_index -= 1
+    curr_index = prev_index - 1
+
+    while curr_index >= 0:
+        if Frame(masks[curr_index]).is_empty():
+            # skip empty frame
+            curr_index -= 1
+        else:
+            if verbose:
+                print('===stitching frame %s with frame %s ...===' % (curr_index, prev_index))
+            fp = FramePair(masks[prev_index], masks[curr_index], max_lbl=max_lbl)
+            fp.stitch()
+            masks[curr_index] = fp.frame1.mask
+            max_lbl = fp.max_lbl
+
+            prev_index = curr_index
+            curr_index -= 1
+
+    return max_lbl
+
+
+def full_stitch(masks, verbose=False, orientation='forward'):
+    """
+    Stitch masks in-place.
+    """
+    assert orientation == 'forward' or orientation == 'backward' or orientation == 'middle', \
+        "Please specify CellStitch direction: options: (1). forward, (2). backward, (3). middle"
+    num_frame = masks.shape[0]
+
+    if orientation == 'forward':
+        _forward_stitch(masks, max_lbl=0, verbose=verbose)
+    elif orientation == 'backward':
+        _backward_stitch(masks, max_lbl=0, verbose=verbose)
+    else:
+        mid_layer = num_frame // 2
+        max_lbl = _backward_stitch(masks[:mid_layer], max_lbl=0, verbose=verbose)
+        _forward_stitch(masks[mid_layer:], max_lbl=max_lbl, verbose=verbose)
+
     overseg_correction(masks)
-    #elif orientation == 'backward':
-    #elif orientation == 'center':
+    
