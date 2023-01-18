@@ -82,7 +82,7 @@ def full_stitch_reverse(masks, verbose=False):
     """
     num_frame = masks.shape[0]
 
-    prev_index = num_frame
+    prev_index = num_frame - 1
     max_lbl = 0
 
     while Frame(masks[prev_index]).is_empty():
