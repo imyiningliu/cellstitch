@@ -42,12 +42,13 @@ def overseg_correction(masks):
         relabel_layer(masks, z, lbls)
 
 
-def full_stitch(masks, verbose=False):
+def full_stitch(masks, verbose=False, orientation='forward'):
     """
     Stitch masks in-place.
     """
     num_frame = masks.shape[0]
 
+    #if orientation == 'forward':
     prev_index = 0
     max_lbl = 0
 
@@ -74,3 +75,5 @@ def full_stitch(masks, verbose=False):
             curr_index += 1
 
     overseg_correction(masks)
+    #elif orientation == 'backward':
+    #elif orientation == 'center':
