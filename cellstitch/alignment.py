@@ -119,3 +119,50 @@ class FramePair:
                 self.max_lbl += 1
                 stitched_mask1[mask1 == lbl1] = self.max_lbl
         self.frame1 = Frame(stitched_mask1)
+
+    def stitch_euclidean(self):
+        """Stitch frame1 using frame 0."""
+
+        lbls0 = self.frame0.get_lbls()[1:]  # ignore background
+        lbls1 = self.frame1.get_lbls()[1:]
+
+        locs0 = self.frame0.get_locations()
+        locs1 = self.frame1.get_locations()
+
+        # compute matching
+        C = ot.dist(locs0, locs1)
+        plan = self.get_plan(C)
+
+        # get a soft matching from plan
+        n, m = plan.shape
+        soft_matching = np.zeros((n, m))
+
+        for i in range(n):
+            matched_index = plan[i].argmax()
+            soft_matching[i, matched_index] = 1
+
+        for j in range(m):
+            matched_index = plan[:, j].argmax()
+            soft_matching[matched_index, j] = 1
+
+        mask0, mask1 = self.frame0.mask, self.frame1.mask
+        overlap = _label_overlap(self.frame0.mask, self.frame1.mask)
+
+        stitched_mask1 = np.zeros(mask1.shape)
+        for lbl1_index in range(m):
+            # find the cell with the lowest cost (i.e. lowest scaled distance)
+            matching_filter = soft_matching[:, lbl1_index]
+            filtered_C = C[:, lbl1_index].copy()
+            filtered_C[matching_filter == 0] = np.Inf  # ignore the non-matched cells
+
+            lbl0_index = np.argmin(filtered_C)  # this is the cell0 we will attempt to relabel cell1 with
+
+            lbl0, lbl1 = lbls0[lbl0_index], lbls1[lbl1_index]
+
+            if overlap[lbl0][lbl1] != 0:
+                stitched_mask1[mask1 == lbl1] = lbl0
+            else:
+                self.max_lbl += 1
+                stitched_mask1[mask1 == lbl1] = self.max_lbl
+        self.frame1 = Frame(stitched_mask1)
+

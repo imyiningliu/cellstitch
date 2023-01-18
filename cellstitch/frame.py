@@ -27,3 +27,15 @@ class Frame:
         get the size of the given lbl from the frame.
         """
         return (self.mask == lbl).sum()
+
+    def get_locations(self):
+        """
+        returns the centroids of each cell in the frame.
+        """
+        lbls = self.get_lbls()[1:]
+        locations = []
+        # compute the average
+        for lbl in lbls:
+            coords = np.asarray((self.mask == lbl)).T # mask to coord
+            locations.append(np.average(coords, axis=0))
+        return np.array(locations)
