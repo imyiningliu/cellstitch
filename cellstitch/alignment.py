@@ -126,7 +126,7 @@ class FramePair:
         lbls0 = self.frame0.get_lbls()
         lbls1 = self.frame1.get_lbls()
 
-        overlap = _label_overlap(self.frame0.mask, fp.frame1.mask)
+        overlap = _label_overlap(self.frame0.mask, self.frame1.mask)
 
         # compute matching
         C = self.get_cost_matrix(overlap)
