@@ -131,17 +131,15 @@ class FramePair:
         # compute matching
         C = self.get_cost_matrix(overlap)
 
-        label_indexes0, label_indexes1 = np.where(overlap != 0)  # only need to look at cells with overlap
+        o_lbls0, o_lbls1 = np.where(overlap != 0)  # only need to look at cells with overlap
 
-        for label_index0, label_index1 in zip(label_indexes0, label_indexes1):
-            if label_index0 != 0 and label_index1 != 0:  # only care about intersecting cells
-                lbl0 = lbls0[label_index0]
-                lbl1 = lbls1[label_index1]
+        for lbl0, lbl1 in zip(o_lbls0, o_lbls1):
+            if lbl0 != 0 and lbl0 != 0:  # only care about intersecting cells
 
                 intersect_mask = (self.frame0.mask == lbl0) * (self.frame1.mask == lbl1)
                 prop_stitched = z_stitched[np.where(intersect_mask)].sum() / intersect_mask.sum()
 
-                C[label_index0][label_index1] /= (prop_stitched + epsilon)
+                C[np.where(lbls0 == lbl0)[0][0]][np.where(lbls1 == lbl1)[0][0]] /= (prop_stitched + epsilon)
 
         plan = self.get_plan(C)
 
