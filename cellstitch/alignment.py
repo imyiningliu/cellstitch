@@ -130,7 +130,10 @@ class FramePair:
 
         # compute matching
         C = self.get_cost_matrix(overlap)
-
+        c = (np.sum(C[0, 1:]) + np.sum(C[1:, 0])) / (C[0, 1:].size + C[1:, 0].size)
+        C[0, 1:] = c
+        C[1:, 0] = c
+        
         o_lbls0, o_lbls1 = np.where(overlap != 0)  # only need to look at cells with overlap
 
         for lbl0, lbl1 in zip(o_lbls0, o_lbls1):
