@@ -133,16 +133,16 @@ class FramePair:
         c = (np.sum(C[0, 1:]) + np.sum(C[1:, 0])) / (C[0, 1:].size + C[1:, 0].size)
         C[0, 1:] = c
         C[1:, 0] = c
-        
-        o_lbls0, o_lbls1 = np.where(overlap != 0)  # only need to look at cells with overlap
 
-        for lbl0, lbl1 in zip(o_lbls0, o_lbls1):
-            if lbl0 != 0 and lbl0 != 0:  # only care about intersecting cells
-
-                intersect_mask = (self.frame0.mask == lbl0) * (self.frame1.mask == lbl1)
-                prop_stitched = z_stitched[np.where(intersect_mask)].sum() / intersect_mask.sum()
-
-                C[np.where(lbls0 == lbl0)[0][0]][np.where(lbls1 == lbl1)[0][0]] /= (prop_stitched + epsilon)
+        # o_lbls0, o_lbls1 = np.where(overlap != 0)  # only need to look at cells with overlap
+        #
+        # for lbl0, lbl1 in zip(o_lbls0, o_lbls1):
+        #     if lbl0 != 0 and lbl0 != 0:  # only care about intersecting cells
+        #
+        #         intersect_mask = (self.frame0.mask == lbl0) * (self.frame1.mask == lbl1)
+        #         prop_stitched = z_stitched[np.where(intersect_mask)].sum() / intersect_mask.sum()
+        #
+        #         C[np.where(lbls0 == lbl0)[0][0]][np.where(lbls1 == lbl1)[0][0]] /= (prop_stitched + epsilon)
 
         plan = self.get_plan(C)
 
