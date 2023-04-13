@@ -76,7 +76,8 @@ class FramePair:
                 lbl0, lbl1 = lbls0[lbl0_index], lbls1[lbl1_index]
                 overlap_size = overlap[lbl0, lbl1]
                 scaling_factor = overlap_size / (sizes0[lbl0] + sizes1[lbl1] - overlap_size)
-                C[lbl0_index, lbl1_index] = 1 / (scaling_factor + epsilon)
+                # C[lbl0_index, lbl1_index] = 1 / (scaling_factor + epsilon)
+                C[lbl0_index, lbl1_index] = 1 - scaling_factor
 
         return C
 
