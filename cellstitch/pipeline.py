@@ -49,7 +49,6 @@ def full_stitch(masks, verbose=False):
     num_frame = masks.shape[0]
 
     prev_index = 0
-    max_lbl = masks.max()
 
     while Frame(masks[prev_index]).is_empty():
         prev_index += 1
@@ -64,11 +63,9 @@ def full_stitch(masks, verbose=False):
             if verbose:
                 print("===Stitching frame %s with frame %s ...===" % (curr_index, prev_index))
 
-            fp = FramePair(masks[prev_index], masks[curr_index], max_lbl=max_lbl)
+            fp = FramePair(masks[prev_index], masks[curr_index], max_lbl=masks.max())
             fp.stitch()
             masks[curr_index] = fp.frame1.mask
-
-            max_lbl = fp.max_lbl
 
             prev_index = curr_index
             curr_index += 1
