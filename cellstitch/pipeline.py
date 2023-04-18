@@ -49,7 +49,7 @@ def full_stitch(masks, verbose=False):
     num_frame = masks.shape[0]
 
     prev_index = 0
-    max_lbl = 0
+    max_lbl = masks.max()
 
     while Frame(masks[prev_index]).is_empty():
         prev_index += 1

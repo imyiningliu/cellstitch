@@ -36,6 +36,6 @@ class Frame:
         locations = []
         # compute the average
         for lbl in lbls:
-            coords = np.asarray((self.mask == lbl)).T # mask to coord
+            coords = np.asarray((self.mask == lbl)).T  # mask to coord
             locations.append(np.average(coords, axis=0))
         return np.array(locations)
