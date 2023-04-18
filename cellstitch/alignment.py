@@ -118,7 +118,8 @@ class FramePair:
                 stitched_mask1[mask1 == lbl1] = lbl0
             else:
                 self.max_lbl += 1
-                stitched_mask1[mask1 == lbl1] = self.max_lbl
+                print("create new label %s" % self.max_lbl)
+                stitched_mask1[mask1 == lbl1] = self.max_lbl  # create a new label
         self.frame1 = Frame(stitched_mask1)
 
 
