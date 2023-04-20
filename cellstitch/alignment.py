@@ -88,6 +88,7 @@ class FramePair:
 
         # get sizes
         overlap = _label_overlap(self.frame0.mask, self.frame1.mask)
+        min_overlap = overlap.min()
 
         # compute matching
         C = self.get_cost_matrix(overlap)
@@ -114,7 +115,7 @@ class FramePair:
 
             lbl0, lbl1 = lbls0[lbl0_index], lbls1[lbl1_index]
 
-            if lbl0 != 0:
+            if lbl0 != 0 and overlap[lbl0][lbl1] > min_overlap:  # only reassign if they overlap
                 stitched_mask1[mask1 == lbl1] = lbl0
             else:
                 self.max_lbl += 1
