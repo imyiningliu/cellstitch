@@ -13,11 +13,9 @@ def relabel_layer(masks, z, lbls):
         reference_layer = masks[z + 1]
 
     overlap = _label_overlap(reference_layer, layer)
-    layer_lbls = np.unique(layer)
 
     for lbl in lbls:
-        lbl1_index = np.where(layer_lbls == lbl)[0][0]
-        lbl0 = np.argmax(overlap[:, lbl1_index])
+        lbl0 = np.argmax(overlap[:, lbl])
         layer[layer == lbl] = lbl0
 
 
