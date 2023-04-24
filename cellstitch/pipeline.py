@@ -68,7 +68,7 @@ def full_stitch(masks, verbose=False):
             prev_index = curr_index
             curr_index += 1
 
-    # overseg_correction(masks)
+    overseg_correction(masks)
 
 
 def full_stitch_reverse(masks, verbose=False):
