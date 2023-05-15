@@ -80,7 +80,7 @@ class FramePair:
 
         return C
 
-    def stitch(self):
+    def stitch(self, yz_not_stitched, xz_not_stitched):
         """Stitch frame1 using frame 0."""
 
         lbls0 = self.frame0.get_lbls()
@@ -114,7 +114,10 @@ class FramePair:
 
             lbl0, lbl1 = lbls0[lbl0_index], lbls1[lbl1_index]
 
-            if lbl0 != 0 and overlap[lbl0][lbl1] > 0.1:  # only reassign if they overlap
+            n_not_stith_pixel = yz_not_stitched[np.where(self.frame1.mask == lbl1)].sum() + xz_not_stitched[np.where(self.frame1.mask == lbl1)].sum()
+            stitch_cell = n_not_stith_pixel <= 0.5 * (self.frame1.mask == lbl1).sum()
+        
+            if lbl0 != 0 and stitch_cell:  # only reassign if they overlap
                 stitched_mask1[mask1 == lbl1] = lbl0
             else:
                 self.max_lbl += 1
