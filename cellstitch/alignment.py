@@ -183,4 +183,3 @@ class FramePair:
                 self.max_lbl += 1
                 stitched_mask1[mask1 == lbl1] = self.max_lbl
         self.frame1 = Frame(stitched_mask1)
-
