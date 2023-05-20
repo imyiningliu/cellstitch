@@ -1,5 +1,6 @@
 from cellstitch.alignment import *
 from cellpose.metrics import _label_overlap
+from cellpose.utils import fill_holes_and_remove_small_masks
 
 
 def relabel_layer(masks, z, lbls):
@@ -71,4 +72,5 @@ def full_stitch(xy_masks, yz_masks, xz_masks, verbose=False):
             prev_index = curr_index
             curr_index += 1
 
+    xy_masks = fill_holes_and_remove_small_masks(xy_masks)
     overseg_correction(xy_masks)
