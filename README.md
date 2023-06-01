@@ -1,2 +1,2 @@
 # cellstitch
-![](cellstitch.png) 
+![](figures/cellstitch.png) 
