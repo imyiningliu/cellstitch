@@ -98,7 +98,7 @@ def full_stitch_2d(masks, verbose=False):
                 print("===Stitching frame %s with frame %s ...===" % (curr_index, prev_index))
 
             fp = FramePair(masks[prev_index], masks[curr_index], max_lbl=masks.max())
-            fp.stitch()
+            fp.stitch_2d()
             masks[curr_index] = fp.frame1.mask
 
             prev_index = curr_index
