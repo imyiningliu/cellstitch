@@ -106,3 +106,4 @@ def full_stitch_2d(masks, verbose=False):
 
     masks = fill_holes_and_remove_small_masks(masks)
     overseg_correction(masks)
+

@@ -80,7 +80,7 @@ class FramePair:
 
         return C
 
-    def stitch(self, yz_not_stitched, xz_not_stitched, p_stitching_votes = 0.75):
+    def stitch(self, yz_not_stitched, xz_not_stitched, p_stitching_votes=0.75):
         """Stitch frame1 using frame 0."""
 
         lbls0 = self.frame0.get_lbls()
@@ -170,7 +170,7 @@ class FramePair:
     # for testing #
     ###############
 
-    def stitch_euclidean(self):
+    def stitch_euclidean(self, yz_not_stitched, xz_not_stitched, p_stitching_votes=0.75):
         """Stitch frame1 using frame 0."""
 
         lbls0 = self.frame0.get_lbls()[1:]  # ignore background
@@ -181,6 +181,7 @@ class FramePair:
 
         # compute matching
         C = ot.dist(locs0, locs1)
+
         # get cell sizes
         sizes0 = self.frame0.get_sizes()[1:]
         sizes1 = self.frame1.get_sizes()[1:]
@@ -200,12 +201,7 @@ class FramePair:
             matched_index = plan[i].argmax()
             soft_matching[i, matched_index] = 1
 
-        for j in range(m):
-            matched_index = plan[:, j].argmax()
-            soft_matching[matched_index, j] = 1
-
         mask0, mask1 = self.frame0.mask, self.frame1.mask
-        overlap = _label_overlap(self.frame0.mask, self.frame1.mask)
 
         stitched_mask1 = np.zeros(mask1.shape)
         for lbl1_index in range(m):
@@ -218,10 +214,13 @@ class FramePair:
 
             lbl0, lbl1 = lbls0[lbl0_index], lbls1[lbl1_index]
 
-            if overlap[lbl0][lbl1] != 0:
+            n_not_stith_pixel = yz_not_stitched[np.where(self.frame1.mask == lbl1)].sum() / 2 + xz_not_stitched[
+                np.where(self.frame1.mask == lbl1)].sum() / 2
+            stitch_cell = n_not_stith_pixel <= (1 - p_stitching_votes) * (self.frame1.mask == lbl1).sum()
+
+            if lbl0 != 0 and stitch_cell:  # only reassign if they overlap
                 stitched_mask1[mask1 == lbl1] = lbl0
             else:
                 self.max_lbl += 1
-                stitched_mask1[mask1 == lbl1] = self.max_lbl
+                stitched_mask1[mask1 == lbl1] = self.max_lbl  # create a new label
         self.frame1 = Frame(stitched_mask1)
-    
