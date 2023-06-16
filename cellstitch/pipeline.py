@@ -74,36 +74,3 @@ def full_stitch(xy_masks, yz_masks, xz_masks, verbose=False):
 
     xy_masks = fill_holes_and_remove_small_masks(xy_masks)
     overseg_correction(xy_masks)
-
-
-def full_stitch_2d(masks, verbose=False):
-    """
-    Stitch masks in-place (top -> bottom).
-    """
-    num_frame = masks.shape[0]
-
-    prev_index = 0
-
-    while Frame(masks[prev_index]).is_empty():
-        prev_index += 1
-
-    curr_index = prev_index + 1
-
-    while curr_index < num_frame:
-        if Frame(masks[curr_index]).is_empty():
-            # if frame is empty, skip
-            curr_index += 1
-        else:
-            if verbose:
-                print("===Stitching frame %s with frame %s ...===" % (curr_index, prev_index))
-
-            fp = FramePair(masks[prev_index], masks[curr_index], max_lbl=masks.max())
-            fp.stitch_2d()
-            masks[curr_index] = fp.frame1.mask
-
-            prev_index = curr_index
-            curr_index += 1
-
-    masks = fill_holes_and_remove_small_masks(masks)
-    overseg_correction(masks)
-
