@@ -14,10 +14,10 @@ from cellpose import plot as cp_plot
 # interpolation helper functions
 #-------------------------------
 
-def comp_match_plan(pc1, pc2):
+def comp_match_plan(pc1, pc2, dist='sqeuclidean'):
     """Compute optimal matching plans between 2 sets of point clouds"""
     # compute cost matrix
-    C = ot.dist(pc1, pc2).astype(np.float64)
+    C = ot.dist(pc1, pc2, metric=dist).astype(np.float64)
     C /= C.max()
 
     # convert point clouds to uniform distributions
@@ -30,7 +30,7 @@ def comp_match_plan(pc1, pc2):
     return plan
 
 
-def interpolate(pc1, pc2, anisotropy=2):
+def interpolate(pc1, pc2, dist='sqeuclidean', anisotropy=2):
     """
     Calculate interpolated predictions
 
@@ -51,7 +51,7 @@ def interpolate(pc1, pc2, anisotropy=2):
         Smoothed boundary locations along interpolated layers
     """
     alphas = np.linspace(0, 1, anisotropy + 1)[1:-1]
-    plan = comp_match_plan(pc1, pc2)
+    plan = comp_match_plan(pc1, pc2, dist=dist)
     normalized_plan = plan / plan.sum(axis=1, keepdims=1)  # normalize so that the row sum is 1
 
     interp_pcs = []
@@ -275,7 +275,7 @@ def connect_boundary(coords, size, lbl=1):
 # Core Interpolation functions
 #-----------------------------
 
-def interp_layers(sc_mask, tg_mask, anisotropy=2):
+def interp_layers(sc_mask, tg_mask, dist='sqeuclidean', anisotropy=2):
     """
     Interpolating adjacent z-layers
     """
@@ -334,8 +334,7 @@ def interp_layers(sc_mask, tg_mask, anisotropy=2):
         sc_coord = mask_to_coord(sc_ct)
         tg_coord = mask_to_coord(tg_ct)
 
-        plan = comp_match_plan(sc_coord, tg_coord)
-        interp_coords = interpolate(sc_coord, tg_coord, anisotropy=anisotropy)
+        interp_coords = interpolate(sc_coord, tg_coord, dist=dist, anisotropy=anisotropy)
         interps = [
             ndi.binary_fill_holes(connect_boundary(interp, shape)) * lbl
             for interp in interp_coords
@@ -350,7 +349,7 @@ def interp_layers(sc_mask, tg_mask, anisotropy=2):
     return interp_masks
 
 
-def full_interpolate(masks, anisotropy=2, verbose=False):
+def full_interpolate(masks, anisotropy=2, dist='sqeuclidean', verbose=False):
     """
     Interpolating between all adjacent z-layers
 
@@ -381,7 +380,7 @@ def full_interpolate(masks, anisotropy=2, verbose=False):
         if verbose and i % 20 == 0:
             print('Interpolating layer {} & {}...'.format(i, i+1))
         tg_mask = masks[i+1]
-        interps = interp_layers(sc_mask, tg_mask, anisotropy=anisotropy)
+        interps = interp_layers(sc_mask, tg_mask, dist=dist, anisotropy=anisotropy)
         interp_masks[idx:idx+anisotropy+1] = interps
         idx += anisotropy
 
