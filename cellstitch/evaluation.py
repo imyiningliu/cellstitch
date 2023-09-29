@@ -4,10 +4,13 @@ import numpy as np
 from cellpose import metrics as cp_metrics
 from cellpose import utils as cp_utils
 from cellstitch.alignment import *
+
 from scipy import ndimage as ndi
 from scipy.spatial import ConvexHull, Delaunay
 from scipy.spatial.qhull import QhullError
+
 from skimage.measure import marching_cubes, mesh_surface_area
+from skimage.metrics import variation_of_information
 
 
 #--------------------
@@ -137,6 +140,13 @@ def average_precision(masks_true, masks_pred, threshold):
     return [ap, tp, fp, fn]  # return as list for easy convert to dataframe
 
 
+def voi(masks_true, masks_pred):
+    """
+    Calculate Variance-of-information (VI) to measure the amount of over-/under-segmentation
+    """
+    h_over, h_under = variation_of_information(masks_true, masks_pred)
+    return h_over, h_under
+    
 def avg_symmetric_surf_dist(mask, pred, mask_lbls, pred_lbls):
     """
     Calculate Average Symmetric Surface Distance for each paired mask label & prediction
