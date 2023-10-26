@@ -40,10 +40,7 @@ def overseg_correction(masks):
     for z, lbls in layers_lbls.items():
         relabel_layer(masks, z, lbls)
 
-# TMP: for CGRU benchmark, we don't leverage xz & yz direction predictions
-        
-#def full_stitch(xy_masks, yz_masks, xz_masks, verbose=False):
-def full_stitch(xy_masks, verbose=False):
+def full_stitch(xy_masks, yz_masks, xz_masks, verbose=False):
     """
     Stitch masks in-place (top -> bottom).
     """
@@ -64,12 +61,11 @@ def full_stitch(xy_masks, verbose=False):
             if verbose:
                 print("===Stitching frame %s with frame %s ...===" % (curr_index, prev_index))
             
-            # yz_not_stitched = (yz_masks[prev_index] != 0) * (yz_masks[curr_index] != 0) * (yz_masks[prev_index] != yz_masks[curr_index])
-            # xz_not_stitched = (xz_masks[prev_index] != 0) * (xz_masks[curr_index] != 0) * (xz_masks[prev_index] != xz_masks[curr_index])
+            yz_not_stitched = (yz_masks[prev_index] != 0) * (yz_masks[curr_index] != 0) * (yz_masks[prev_index] != yz_masks[curr_index])
+            xz_not_stitched = (xz_masks[prev_index] != 0) * (xz_masks[curr_index] != 0) * (xz_masks[prev_index] != xz_masks[curr_index])
      
             fp = FramePair(xy_masks[prev_index], xy_masks[curr_index], max_lbl=xy_masks.max())
-            #fp.stitch(yz_not_stitched, xz_not_stitched)
-            fp.stitch()
+            fp.stitch(yz_not_stitched, xz_not_stitched)
             xy_masks[curr_index] = fp.frame1.mask
 
             prev_index = curr_index
