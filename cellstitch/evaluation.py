@@ -3,14 +3,14 @@ import numpy as np
 
 from cellpose import metrics as cp_metrics
 from cellpose import utils as cp_utils
-from cellstitch.alignment import *
-
 from scipy import ndimage as ndi
 from scipy.spatial import ConvexHull, Delaunay
 from scipy.spatial.qhull import QhullError
 
 from skimage.measure import marching_cubes, mesh_surface_area
 from skimage.metrics import variation_of_information
+
+from .alignment import *
 
 
 #--------------------

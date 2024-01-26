@@ -13,10 +13,9 @@ nb_requirements = [
 ]
 
 setup(
-    name="CellStitch",
+    name="cellstitch",
     version="1.0.0",
     description="Cellstitch: 3D cellular anisotropic image segmentation via optimal transport",
-    authors=["Yining Liu", "Yinuo Jin"],
     # url="https://cellstitch.readthedocs.io",
     packages=find_packages(),
     python_requires='>=3.8',
